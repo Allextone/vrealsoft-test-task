@@ -37,9 +37,6 @@ $ npm install
 If you want to up project locally, you should to choouse `for localhost` params in .env 
 
 ```bash
-# development
-$ npm run start
-
 # watch mode
 $ npm run start:dev
 ```
