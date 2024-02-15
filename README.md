@@ -32,7 +32,9 @@
 $ npm install
 ```
 
-## Running the app
+## Running the app locally
+
+If you want to up project locally, you should to choouse `for localhost` params in .env 
 
 ```bash
 # development
@@ -43,6 +45,18 @@ $ npm run start:dev
 
 # production mode
 $ npm run start:prod
+```
+
+## Running the app via docker
+
+If you want to up project locally, you should to choouse `for docker` params in .env 
+
+```bash
+# build the project
+$ docker-compose build
+
+# start the project
+$ docker-compose up
 ```
 
 ## Support
