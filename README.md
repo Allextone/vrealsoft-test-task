@@ -66,6 +66,11 @@ $ http(s)://DOMAIN:PORT/api/docs
 ## Logs
 You can found out all of saved logs in file `app-logs.log` in root of project.
 
+## Migrated data
+1. admin - email: vrealsoft.test.admin.@mailinator.com
+           password: qwer1234A!
+2. user - email: john.walter@mailinator.com
+           password: ksIw1q123!
 
 ## Support
 
