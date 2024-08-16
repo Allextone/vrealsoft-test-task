@@ -1,8 +1,10 @@
-import { LoggerService } from '@nestjs/common';
+import { Inject, Injectable, LoggerService } from '@nestjs/common';
 import { format } from 'date-fns';
 import { createLogger, transports } from 'winston';
-
 import stableStringify from 'fast-safe-stringify';
+import { AsyncLocalStorage } from 'async_hooks';
+
+import { ASYNC_STORAGE } from './logger.constants';
 
 const contextsToIgnore = [
   'NestFactory',
@@ -41,14 +43,51 @@ function parseProcessIndex() {
   return 0;
 }
 
+/**
+ * format meta data from object to string
+ */
+const formattedMeta = (meta: any) => {
+  const metaKeys = Object.keys(meta);
+  if (!metaKeys.length) {
+    return '';
+  }
+
+  const metaValues = Object.values(meta);
+
+  let condition = true;
+  let result = '';
+  for (let i = 0; condition; i++) {
+    result =
+      result +
+      metaKeys[i] +
+      ': ' +
+      metaValues[i] +
+      (metaKeys[i + 1] ? ', ' : '');
+
+    if (!metaKeys[i + 1]) {
+      condition = false;
+      return result;
+    }
+  }
+  return result;
+};
+
 const infoLogger = createLogger({
-  level: 'info',
+  level: 'verbose',
   transports: [
-    new transports.Console(),
-    new transports.File({ filename: 'info.log', dirname: process.cwd() }),
+    // new transports.Console(),
+    new transports.File({
+      filename: 'app-logs.log',
+      dirname: process.cwd(),
+      eol: '\n',
+      tailable: true,
+    }),
   ],
+  handleExceptions: true,
+  handleRejections: true,
 });
 
+@Injectable()
 export class AppLogger implements LoggerService {
   protected context: string;
   private readonly processIndex: number;
@@ -60,9 +99,10 @@ export class AppLogger implements LoggerService {
     meta: any,
   ) => void;
 
-  constructor(context = 'MAIN') {
-    this.context = context;
-
+  constructor(
+    @Inject(ASYNC_STORAGE)
+    private readonly asyncStorage?: AsyncLocalStorage<Map<string, string>>,
+  ) {
     this.processIndex = parseProcessIndex();
 
     this.printMessage = this.printMessageConsole;
@@ -124,10 +164,10 @@ export class AppLogger implements LoggerService {
     process.exit(1);
   }
 
-  infoHandler(message: string, traceId?: string) {
+  infoHandler(message: string) {
     infoLogger.info(message, {
-      date: new Date(),
-      traceId: traceId || null,
+      // date: new Date(),
+      // traceId: traceId || null,
     });
   }
 
@@ -167,12 +207,31 @@ export class AppLogger implements LoggerService {
 
     const date = format(now, 'yy/MM/dd HH:mm:ss.SSS xxx');
 
-    console.group(`[${type}] ${date} [${this.processIndex}] ${context}`);
+    const infoData = `[${type}] | ${date} | LOG [${context}]: `;
+
+    const traceId: string = this.asyncStorage.getStore()?.get('traceId');
 
     if (message instanceof Object) {
       console.dir(message, { depth: 16, sorted: true });
     } else {
-      log(message);
+      const messageForLog =
+        context === 'HTTP'
+          ? `\u001b[1;32m${message}\u001b[39m`
+          : context === 'SQL'
+          ? `\u001b[1;36m${message}\u001b[39m`
+          : context === 'EXCEPTION'
+          ? `\u001b[1;31m${message}\u001b[39m`
+          : message;
+      log(
+        `\u001b[1;34m${infoData} \u001b[39m` + messageForLog,
+        ` ${
+          traceId !== undefined ? `\u001b[1;33m ${traceId} \u001b[39m` : '-'
+        }`,
+      );
+
+      this.infoHandler(
+        infoData + message + ` ${traceId !== undefined ? traceId : '-'}`,
+      );
     }
     if (Object.keys(meta).length > 0) {
       console.dir(meta, { depth: 16, sorted: true });

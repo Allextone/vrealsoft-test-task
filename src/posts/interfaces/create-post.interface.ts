@@ -1,4 +1,4 @@
-export interface CreateNoteInterface {
+export interface CreatePostInterface {
   title: string;
   description: string;
   userId: string;

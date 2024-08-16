@@ -4,16 +4,16 @@ import {
   Injectable,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { Reflector } from '@nestjs/core';
 import { UserRoleEnum } from '../enums/user-role.enum';
-import { AppLogger } from '../logger/logger';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  private logger = new AppLogger('RolesGuard');
+  private logger: Logger = new Logger(RolesGuard.name);
 
   constructor(private reflector: Reflector) {}
 
@@ -27,8 +27,9 @@ export class RolesGuard implements CanActivate {
 
     const req = context.switchToHttp().getRequest();
     const userData = req.user;
+    console.log('userData: ', userData);
 
-    if (!userData || !requiredRoles.includes(userData.sub.user_role)) {
+    if (!userData || !requiredRoles.includes(userData.role)) {
       this.logger.error('User access denied');
       throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
     }

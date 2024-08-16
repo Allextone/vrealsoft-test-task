@@ -2,6 +2,7 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
@@ -9,12 +10,11 @@ import { JwtService } from '@nestjs/jwt';
 import { RedisService } from '@liaoliaots/nestjs-redis';
 import { ConfigService } from '@nestjs/config';
 
-import { AppLogger } from '../../infrastructure/logger/logger';
 import { UserRoleEnum } from '../enums/user-role.enum';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  private logger = new AppLogger('JwtAuthGuard');
+  private logger: Logger = new Logger(JwtAuthGuard.name);
 
   constructor(
     private readonly configService: ConfigService,
@@ -28,7 +28,7 @@ export class JwtAuthGuard implements CanActivate {
   ): boolean | Promise<boolean> | Observable<boolean> {
     const req = context.switchToHttp().getRequest();
 
-    const token: string = req.headers.authorization;
+    const token: string = req.cookies.jwt;
     const userId: string = req.params.userId;
 
     return new Promise<void>(async (resolve, reject) => {
@@ -39,12 +39,12 @@ export class JwtAuthGuard implements CanActivate {
         reject();
       }
 
-      const adminRootUserId: string =
-        this.configService.get<string>('DEV_ADMIN_USER_ID');
+      // const adminRootUserId: string =
+      //   this.configService.get<string>('DEV_ADMIN_USER_ID');
 
-      if (user && user.id === adminRootUserId) {
-        resolve();
-      }
+      // if (user && user.id === adminRootUserId) {
+      //   resolve();
+      // }
 
       if (
         userId &&
@@ -59,11 +59,11 @@ export class JwtAuthGuard implements CanActivate {
       resolve();
     })
       .then(() => {
-        const user = this.jwtService.verify(token, {
+        const data = this.jwtService.verify(token, {
           secret: this.configService.get<string>('JWT_TOKEN_SECRET_KEY'),
         });
 
-        req.user = user;
+        req.user = { id: data.user.id, role: data.user.role };
 
         return true;
       })

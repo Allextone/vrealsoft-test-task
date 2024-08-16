@@ -34,7 +34,7 @@ $ npm install
 
 ## Running the app locally
 
-If you want to up project locally, you should to choouse `for localhost` params in .env 
+If you want to up project locally, you should to choose `for localhost` params in .env 
 
 ```bash
 # watch mode
@@ -43,15 +43,29 @@ $ npm run start:dev
 
 ## Running the app via docker
 
-If you want to up project locally, you should to choouse `for docker` params in .env 
+If you want to up project in docker, you should to choose `for docker` params in .env 
 
 ```bash
 # build the project
 $ docker-compose build
 
 # start the project
-$ docker-compose up
+$ docker-compose up -d
+
+# open the logs
+$ docker-compose logs -f
+$ docker-compose logs --tail 1000 -f
 ```
+
+## Api docs
+```bash
+# To check API docs need to go link below with your own DOMAIN and PORT values (default: localhost and 5000)
+$ http(s)://DOMAIN:PORT/api/docs
+```
+
+## Logs
+You can found out all of saved logs in file `app-logs.log` in root of project.
+
 
 ## Support
 

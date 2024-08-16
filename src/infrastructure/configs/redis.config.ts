@@ -9,9 +9,10 @@ export const redisConfig = async (
     readyLog: true,
     errorLog: true,
     config: {
-      // url: configService.get<string>('REDIS_URL'),
-      host: configService.get('REDIS_HOST'),
-      port: configService.get('REDIS_PORT'),
+      // host: configService.get('REDIS_HOST'),
+      // port: configService.get('REDIS_PORT'),
+      host: configService.get<string>('REDIS_HOST'),
+      port: Number(configService.get<number>('REDIS_PORT')),
     },
   };
 };

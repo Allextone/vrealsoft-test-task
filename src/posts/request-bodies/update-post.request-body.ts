@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 
-export class CreateNoteRequestBody {
+export class UpdatePostRequestBody {
   @ApiProperty({ example: 'Tomo plans', description: 'Title of note' })
   @IsString({ message: 'Must be a string' })
-  title!: string;
+  readonly title?: string;
 
   @ApiProperty({
     example:
@@ -12,5 +12,5 @@ export class CreateNoteRequestBody {
     description: 'Description of note',
   })
   @IsString({ message: 'Must be a string' })
-  description!: string;
+  readonly description?: string;
 }

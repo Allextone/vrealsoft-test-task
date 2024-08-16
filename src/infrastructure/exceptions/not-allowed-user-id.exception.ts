@@ -8,7 +8,7 @@ import { MessageErrorCodeEnum } from '../enums/message-error-code.enum';
 export const NOT_ALLOWED_USER_ID_EXCEPTION_NAME = 'not_allowed_user_id';
 
 export class NotAllowedUserIdException extends ApplicationException {
-  constructor() {
+  constructor(public errorMassage?: string) {
     super();
   }
 
@@ -25,7 +25,9 @@ export class NotAllowedUserIdException extends ApplicationException {
   }
 
   getMessage(): string {
-    return 'User not allowed to do this action';
+    const message: string =
+      this.errorMassage || 'User not allowed to do this action';
+    return message;
   }
 
   getData(): ApplicationExceptionDataType {

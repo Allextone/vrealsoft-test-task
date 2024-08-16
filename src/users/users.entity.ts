@@ -22,12 +22,12 @@ export class Users {
   id: string;
 
   @ApiProperty({ example: 'Steve', description: 'First name' })
-  @Column({ nullable: false })
-  first_name: string;
+  @Column({ name: 'first_name', nullable: false })
+  firstName: string;
 
   @ApiProperty({ example: 'Jobs', description: 'Last name' })
-  @Column({ nullable: true })
-  last_name: string;
+  @Column({ name: 'last_name', nullable: true })
+  lastName: string;
 
   @ApiProperty({ example: 'example@gmail.com', description: 'Email' })
   @Column({ unique: true })
@@ -50,29 +50,29 @@ export class Users {
 
   @ApiProperty({
     example: true,
-    description: 'Value that meaning is can user create notes or not',
+    description: 'Value that meaning is can user create posts or not',
   })
-  @Column({ nullable: false, default: true })
-  is_can_create_notes: boolean;
+  @Column({ name: 'is_can_create_posts', nullable: false, default: true })
+  isCanCreatePosts: boolean;
 
   @ApiProperty({
     example: '2023-01-10 17:34:05.929',
     description: 'Created date',
   })
-  @CreateDateColumn()
-  created_date: Date;
+  @CreateDateColumn({ name: 'created_date' })
+  createdDate: Date;
 
   @ApiProperty({
     example: '2023-01-10 17:34:05.929',
     description: 'Updated date',
   })
-  @UpdateDateColumn()
-  updated_date: Date;
+  @UpdateDateColumn({ name: 'updated_date' })
+  updatedDate: Date;
 
   @ApiProperty({
     example: '2023-01-10 17:34:05.929',
     description: 'Deleted date',
   })
-  @DeleteDateColumn()
-  deleted_date: Date;
+  @DeleteDateColumn({ name: 'deleted_date' })
+  deletedDate: Date;
 }

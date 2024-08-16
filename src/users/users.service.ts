@@ -1,14 +1,11 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { hashSync, compareSync, genSaltSync } from 'bcryptjs';
 import { ConfigService } from '@nestjs/config';
 // import { generate } from 'generate-password';
 
-import { AppLogger } from '../infrastructure/logger/logger';
 import { Users } from './users.entity';
-import { UsersNormalizeEntity } from '../infrastructure/normalize-entities/users.normalize-entity';
-import { normalizeData } from '../helpers/helpers-functions';
 import { DataNotFoundException } from '../infrastructure/exceptions/data-not-found.exceptions';
 import { validateEmail } from '../infrastructure/validators/email.validator';
 import { MessageType } from '../infrastructure/response-bodies/message-type.response-body';
@@ -25,7 +22,7 @@ import { UpdateUserByAdminRequestBody } from './request-bodies/update-user-by-ad
 
 @Injectable()
 export class UsersService {
-  private logger = new AppLogger('UsersService');
+  private logger: Logger = new Logger(UsersService.name);
 
   constructor(
     private readonly configService: ConfigService,
@@ -36,17 +33,13 @@ export class UsersService {
 
   private async getOne(
     userId: string,
-    traceId: string,
     strict = true,
     withPassword = false,
-  ): Promise<UsersNormalizeEntity> {
-    const user: UsersNormalizeEntity = normalizeData(
-      await this.usersRepository.findOne({
-        where: { id: userId },
-        select: { password: withPassword }, //TODO: test
-        comment: traceId,
-      }),
-    );
+  ): Promise<Users> {
+    const user: Users = await this.usersRepository.findOne({
+      where: { id: userId },
+      select: { password: withPassword }, //TODO: test
+    });
 
     if (!user && strict) {
       throw new DataNotFoundException('User does not found or not exist');
@@ -55,87 +48,48 @@ export class UsersService {
     return user;
   }
 
-  private async getOneByEmail(
-    email: string,
-    traceId: string,
-  ): Promise<UsersNormalizeEntity> {
-    return normalizeData(
-      await this.usersRepository.findOne({
-        where: { email: email },
-        select: { password: true, id: true, role: true },
-        comment: traceId,
-      }),
-    );
+  private async getOneByEmail(email: string): Promise<Users> {
+    return await this.usersRepository.findOne({
+      where: { email: email },
+      select: { password: true, id: true, role: true },
+    });
   }
 
-  private async getAll(traceId: string): Promise<UsersNormalizeEntity[]> {
-    return normalizeData(
-      await this.usersRepository.findOne({
-        comment: traceId,
-        order: { created_date: 'DESC' },
-      }),
-    );
+  private async getAll(): Promise<Users[]> {
+    return await this.usersRepository.find({
+      order: { createdDate: 'DESC' },
+    });
   }
 
   private async update(
     userId: string,
     body: UpdateUserInterface,
-    traceId: string,
   ): Promise<MessageType> {
-    await this.usersRepository
-      .createQueryBuilder('users')
-      .update()
-      .set(normalizeData(body, false))
-      .where('users.id = :userId', { userId })
-      .comment(`traceId: ${traceId}`)
-      .execute();
-
+    await this.usersRepository.save({ id: userId, ...body });
     return { message: true };
   }
 
-  private async create(
-    body: CreateUserInterface,
-    traceId: string,
-  ): Promise<MessageType> {
-    await this.usersRepository
-      .createQueryBuilder('users')
-      .insert()
-      .values(normalizeData(body, false))
-      .comment(`traceId: ${traceId}`)
-      .execute();
-
+  private async create(body: CreateUserInterface): Promise<MessageType> {
+    await this.usersRepository.save(body);
     return { message: true };
   }
 
-  private async delete(userId: string, traceId: string): Promise<MessageType> {
-    await this.usersRepository
-      .createQueryBuilder('users')
-      .delete()
-      .where('users.id = :userId', { userId })
-      .comment(`traceId: ${traceId}`)
-      .execute();
-
+  private async delete(userId: string): Promise<MessageType> {
+    await this.usersRepository.softDelete(userId);
     return { message: true };
   }
 
-  async getUser(
-    userId: string,
-    traceId: string,
-  ): Promise<UsersNormalizeEntity> {
-    return await this.getOne(userId, traceId);
+  async getUser(userId: string): Promise<Users> {
+    return await this.getOne(userId);
   }
 
-  async getUserByEmail(
-    email: string,
-    traceId: string,
-  ): Promise<UsersNormalizeEntity> {
-    return await this.getOneByEmail(validateEmail(email), traceId);
+  async getUserByEmail(email: string): Promise<Users> {
+    return await this.getOneByEmail(validateEmail(email));
   }
 
   async updateUser(
     userId: string,
     body: UpdateUserRequestBody,
-    traceId: string,
   ): Promise<MessageType> {
     const {
       email,
@@ -145,27 +99,22 @@ export class UsersService {
       oldPassword,
     }: UpdateUserRequestBody = body;
 
-    const user: UsersNormalizeEntity = await this.getOne(
-      userId,
-      traceId,
-      true,
-      true,
-    );
+    const user: Users = await this.getOne(userId, true, true);
 
     const options: UpdateUserInterface = {};
 
     if (email) {
-      this.logger.log(`Job [updateUser] -> new email: ${email}`);
+      this.logger.log(`[updateUser]: new email: ${email}`);
       Object.assign(options, { email: validateEmail(email) });
     }
 
     if (firstName || firstName === '') {
-      this.logger.log(`Job [updateUser] -> new firstName: ${firstName}`);
+      this.logger.log(`[updateUser]: new firstName: ${firstName}`);
       Object.assign(options, { firstName: firstName });
     }
 
     if (lastName || lastName === '') {
-      this.logger.log(`Job [updateUser] -> new lastName: ${lastName}`);
+      this.logger.log(`[updateUser]: new lastName: ${lastName}`);
       Object.assign(options, { lastName: lastName });
     }
 
@@ -189,20 +138,17 @@ export class UsersService {
         throw new NotValidPasswordException('Old password is incorrect');
       }
 
-      this.logger.log(`Job [updateUser] -> new password: ${newPassword}`);
-      // this.logger.log('Job [updateUser] -> new password');
+      this.logger.log(`[updateUser]: new password: ${newPassword}`);
+      // this.logger.log('[updateUser]: new password');
       Object.assign(options, { password: hashSync(newPassword) });
     }
 
-    await this.update(userId, options, traceId);
+    await this.update(userId, options);
 
     return { message: true };
   }
 
-  async createUser(
-    body: CreateUserRequestBody,
-    traceId: string,
-  ): Promise<MessageType> {
+  async createUser(body: CreateUserRequestBody): Promise<MessageType> {
     const { email, password, firstName, lastName }: CreateUserRequestBody =
       body;
 
@@ -217,20 +163,19 @@ export class UsersService {
       email: validateEmail(email),
       password: hashedPassword,
     };
-    this.logger.log(`Job [createUser] -> options of creating user: ${options}`);
+    this.logger.log(`[createUser]: options of creating user: ${options}`);
 
-    await this.create(options, traceId);
+    await this.create(options);
     return { message: true };
   }
 
-  async deleteUser(userId: string, traceId: string): Promise<MessageType> {
-    await this.delete(userId, traceId);
+  async deleteUser(userId: string): Promise<MessageType> {
+    await this.delete(userId);
     return { message: true };
   }
 
   // admin-panel
   async getUsers(
-    traceId: string,
     offset = 0,
     limit = 20,
     searchKey?: string,
@@ -251,13 +196,12 @@ export class UsersService {
 
       const [usersData, total] = await userQuery
         .orderBy('users.created_date', 'DESC')
-        .comment(`traceId: ${traceId}`)
         .skip(offset)
         .take(limit)
         .getManyAndCount();
 
       return {
-        usersList: normalizeData(usersData),
+        usersList: usersData,
         pagination: {
           page: parseInt(String(offset / limit + 1)),
           perPage: limit,
@@ -273,23 +217,14 @@ export class UsersService {
   private async updateByAdmin(
     userId: string,
     body: UpdateUserByAdminInterface,
-    traceId,
   ): Promise<MessageType> {
-    await this.usersRepository
-      .createQueryBuilder('users')
-      .update()
-      .set(normalizeData(body, false))
-      .where('users.id = :userId', { userId })
-      .comment(`traceId: ${traceId}`)
-      .execute();
-
+    await this.usersRepository.save({ id: userId, ...body });
     return { message: true };
   }
 
   async updateUserByAdmin(
     userId: string,
     body: UpdateUserByAdminRequestBody,
-    traceId: string,
   ): Promise<MessageType> {
     const {
       email,
@@ -303,38 +238,46 @@ export class UsersService {
     const options: any = {};
 
     if (email) {
-      this.logger.log(`Job [updateUserByAdmin] -> new email: ${email}`);
+      this.logger.log(`[updateUserByAdmin]: new email: ${email}`);
       Object.assign(options, { email: validateEmail(email) });
     }
 
     if (firstName || firstName === '') {
-      this.logger.log(`Job [updateUserByAdmin] -> new firstName: ${firstName}`);
+      this.logger.log(`[updateUserByAdmin]: new firstName: ${firstName}`);
       Object.assign(options, { firstName: firstName });
     }
 
     if (lastName || lastName === '') {
-      this.logger.log(`Job [updateUserByAdmin] -> new lastName: ${lastName}`);
+      this.logger.log(`[updateUserByAdmin]: new lastName: ${lastName}`);
       Object.assign(options, { lastName: lastName });
     }
 
     if (password) {
-      this.logger.log(`Job [updateUserByAdmin] -> new password: ${password}`);
+      this.logger.log(`[updateUserByAdmin]: new password: ${password}`);
       Object.assign(options, { password: hashSync(password) });
     }
 
     if (role) {
-      this.logger.log(`Job [updateUserByAdmin] -> new role: ${role}`);
+      this.logger.log(`[updateUserByAdmin]: new role: ${role}`);
       Object.assign(options, { role: role });
     }
 
     if (isCanCreateNotes !== null && isCanCreateNotes !== undefined) {
       this.logger.log(
-        `Job [updateUserByAdmin] -> new isCanCreateNotes: ${isCanCreateNotes}`,
+        `[updateUserByAdmin]: new isCanCreateNotes: ${isCanCreateNotes}`,
       );
       Object.assign(options, { isCanCreateNotes: isCanCreateNotes });
     }
 
-    await this.updateByAdmin(userId, options, traceId);
+    await this.updateByAdmin(userId, options);
+    return { message: true };
+  }
+
+  async deleteUserByAdmin(userId: string): Promise<MessageType> {
+    const user: Users = await this.getOne(userId);
+
+    await this.delete(user.id);
+
     return { message: true };
   }
 }

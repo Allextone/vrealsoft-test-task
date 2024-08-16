@@ -1,4 +1,4 @@
-import { Notes } from '../../../notes/notes.entity';
+import { Posts } from '../../../posts/posts.entity';
 import { Users } from '../../../users/users.entity';
 
-export const entities = [Users, Notes];
+export const entities = [Users, Posts];

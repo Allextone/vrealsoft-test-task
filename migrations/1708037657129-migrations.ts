@@ -24,10 +24,10 @@ export class Migrations1708037657129 implements MigrationInterface {
       null,
     ]);
 
-    const createNoteQuery = `INSERT INTO "notes"
+    const createPostQuery = `INSERT INTO "posts"
     VALUES ($1, $2, $3, $4, $5, $6, $7)`;
 
-    await queryRunner.query(createNoteQuery, [
+    await queryRunner.query(createPostQuery, [
       '08de87b5-dcbb-4fcf-bbfb-be13ee49b917',
       'Shopping list',
       '1. Milk; 2. Cheese; 3. Bread;',
@@ -37,7 +37,7 @@ export class Migrations1708037657129 implements MigrationInterface {
       null,
     ]);
 
-    await queryRunner.query(createNoteQuery, [
+    await queryRunner.query(createPostQuery, [
       '0ec030bd-291b-417c-9c3a-ddbc98efa984',
       'Friends birthday',
       `Mia 27.03\n
@@ -50,7 +50,7 @@ export class Migrations1708037657129 implements MigrationInterface {
       null,
     ]);
 
-    await queryRunner.query(createNoteQuery, [
+    await queryRunner.query(createPostQuery, [
       '090ee5a3-3eef-4df5-a51c-84f1ca7a462a',
       'Morning affairs',
       'First go to the gym. Then go to the store on the way home. Prepare lunch.',

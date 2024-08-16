@@ -15,7 +15,7 @@ export class Migrations1707847978723 implements MigrationInterface {
       'cb699cc0-d9e0-4213-aee3-d1ffcf056989',
       'admin',
       'admin',
-      'cryptology.test.admin.@mailinator.com',
+      'vrealsoft.test.admin.@mailinator.com',
       password,
       'ADMIN',
       true,
@@ -26,6 +26,6 @@ export class Migrations1707847978723 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    //nothing
+    // nothing
   }
 }
